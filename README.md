@@ -1,2 +1,2 @@
-# blog
-UBI Center blog, hosted via Jupyterbook.
+# UBI Center blog
+Hosted via Jupyterbook.
