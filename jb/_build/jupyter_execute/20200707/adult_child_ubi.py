@@ -1,5 +1,7 @@
 # To minimize poverty, should UBI be provided to adults, children, or both?
 
+*By Nate Golden, 2020-07-07*
+
 While [US GDP per capita has more than doubled in the past 50 years](https://fred.stlouisfed.org/series/A939RX0Q048SBEA), many Americans still remain in poverty. According to the Census Bureau's 2018 Supplemental Poverty Measure (SPM), over 40 million Americans live below their SPM poverty threshold.
 
 Some [large guaranteed-income programs have been shown to nearly eliminate poverty](https://www.ubicenter.org/plans), but spending constraints can change how program design affects different outcomes. This paper shows the impact of new universal cash programs on poverty alleviation under varying levels of spending.
@@ -13,6 +15,7 @@ I examine the poverty rate impacts of three different basic income programs:
 Two years ago, Matt Bruenig produced a similar  [paper](https://www.peoplespolicyproject.org/2018/11/29/a-child-allowance-would-be-very-effective-at-poverty-reduction/) using 2017 data in which he compared the same three programs and their impact on the poverty rate up to \$500 billion in new spending. Bruenig found that at all levels of spending up to \$500 billion, a Child Allowance was the most effective program at reducing poverty. This paper considers new spending up to \$1 trillion with updated data from 2018.
 
 ## Background
+
 I used data from the Census Bureau’s 2019 Annual Social and Economic Supplement (ASEC), which uses data collected in 2018. The ASEC survey contains over 180,000 Americans from more than 75,000 households. Each respondent is assigned a sample weight by the Census Bureau so that models can provide consistent national-level estimates.
 
 The Supplemental Poverty Measure classifies respondents' poverty status by comparing their total family income (post tax and transfers) to their family poverty threshold. The Census Bureau defines poverty thresholds based on family size and costs of necessities.
@@ -20,6 +23,7 @@ The Supplemental Poverty Measure classifies respondents' poverty status by compa
 In 2018, 12.7 percent of Americans were in poverty, including 13.6 percent of children and 12.5 percent of adults.
 
 ## Results
+
 A Child Allowance reduces overall poverty more than the other two designs, for spending up to \$500 billion; this aligns with Bruenig's results. However, at levels beyond \$500 billion, a UBI that includes everyone cuts overall poverty more.
 
 Spending \$100 billion on a Child Allowance would equate to monthly stipends of \$114 per child and lift 4.5 million Americans (1.3 million children and 3.2 million adults) out of poverty. \$500 billion on either a Child Allowance or All UBI would lift 12 million Americans out of poverty. Spending \$1 trillion on an All UBI would equate to monthly checks of \$258 per American and lift over 22 million people out of poverty.
