@@ -14,5 +14,6 @@ launch_buttons:
   colab_url: "https://colab.research.google.com"
 
 repository:
-  url                       : https://github.com/UBICenter/blog
-  path_to_book              : "jb"  # A path to your book's folder, relative to the repository root.
+  url: https://github.com/UBICenter/blog
+  path_to_book: jb
+  branch: master
