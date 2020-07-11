@@ -4,15 +4,15 @@ author: UBI Center
 logo: ubi_center_logo.png
 
 html:
-#  use_edit_page_button      : true
-#  use_repository_button     : true
-#  use_issues_button         : true
+  use_edit_page_button      : true
+  use_repository_button     : true
+  use_issues_button         : true
   google_analytics_id       : "UA-138885251-1"
-#  baseurl                   : "https://blog.ubicenter.org"
+  baseurl                   : "https://blog.ubicenter.org"
 
-#launch_buttons:
-#  colab_url: "https://colab.research.google.com"
+launch_buttons:
+  colab_url: "https://colab.research.google.com"
 
-#repository:
-#  url                       : https://github.com/UBICenter/blog
-#  path_to_book              : "jb"  # A path to your book's folder, relative to the repository root.
+repository:
+  url                       : https://github.com/UBICenter/blog
+  path_to_book              : "jb"  # A path to your book's folder, relative to the repository root.
