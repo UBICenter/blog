@@ -3,11 +3,11 @@ title: UBI Center blog
 author: UBI Center
 logo: ubi_center_logo.png
 
-#html:
+html:
 #  use_edit_page_button      : true
 #  use_repository_button     : true
 #  use_issues_button         : true
-#  google_analytics_id       : "UA-138885251-1"
+  google_analytics_id       : "UA-138885251-1"
 #  baseurl                   : "https://blog.ubicenter.org"
 
 #launch_buttons:
