@@ -1,7 +1,7 @@
 # Book settings
-title: UBI Center blog
+title: Blog
 author: UBI Center
-logo: ubi_center_logo.png
+logo: ubi_center_logo_wide_blue.svg
 
 html:
   use_edit_page_button      : true
