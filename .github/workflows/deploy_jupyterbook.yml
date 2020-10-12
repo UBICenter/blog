@@ -5,27 +5,25 @@ on:
       - master
 jobs:
   build-and-deploy:
-    if: github.repository == 'MaxGhenis/microdf'
+    if: github.repository == 'UBICenter/blog'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2  # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
+        uses: actions/checkout@v2
         with:
           persist-credentials: false
 
       - name: Setup Miniconda
         uses: goanpeca/setup-miniconda@v1
         with:
-          activate-environment: microdf
+          activate-environment: blog
           environment-file: environment.yml
           python-version: 3.8
           auto-activate-base: false
 
       - name: Build  # Build Jupyter Book
         shell: bash -l {0}
-        run: |
-          pip install -e .
-          jb build docs/.
+        run: jb build jb/.
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@releases/v3
