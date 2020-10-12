@@ -1,7 +1,6 @@
 name: blog
 dependencies:
 - python
-- taxcalc
 - plotly
 - pandas
 - numpy
