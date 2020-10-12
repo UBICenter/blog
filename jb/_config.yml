@@ -11,6 +11,9 @@ html:
   baseurl                   : "https://blog.ubicenter.org"
   home_page_in_navbar       : false
 
+execute:
+  execute_notebooks: 'force'
+  timeout: -1
 
 launch_buttons:
   colab_url: "https://colab.research.google.com"
