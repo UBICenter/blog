@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
 import microdf as mdf
 
 person = pd.read_csv(
@@ -13,7 +11,7 @@ person = pd.read_csv(
         "SPM_RESOURCES",
         "SPM_WEIGHT",
         "AGI",
-        "FEDTAX_BC",
+        "FEDTAX_AC",
         "FICA",
     ],
 )
@@ -23,24 +21,31 @@ person.columns = person.columns.str.lower()
 person.marsupwt /= 100
 person.spm_weight /= 100
 person["person"] = 1
-person["fica_fedtax_bc"] = person.fica + person.fedtax_bc
+person["fica_fedtax_ac"] = person.fica + person.fedtax_ac
 
 # Calculate the number of children and adults in each household.
 SPM_COLS = ["spm_id", "spm_povthreshold", "spm_resources", "spm_weight"]
-spmu = person.groupby(SPM_COLS)[["agi", "fica_fedtax_bc", "person"]].sum()
-spmu.columns = ["spmu_agi", "spmu_fica_fedtax_bc", "spmu_total_people"]
+spmu = person.groupby(SPM_COLS)[["agi", "fica_fedtax_ac", "person"]].sum()
+spmu.columns = ["spmu_agi", "spmu_fica_fedtax_ac", "spmu_total_people"]
 spmu.reset_index(inplace=True)
 spmu["spm_resources_before_tax"] = (
-    spmu.spm_resources + spmu.spmu_fica_fedtax_bc
+    spmu.spm_resources + spmu.spmu_fica_fedtax_ac
 )
 person = person.merge(spmu, on=SPM_COLS)
 
-# Calculate all totals at the SPM unit level so the poverty gap adds up.
-total_current_tax_revenue = mdf.weighted_sum(
-    spmu, "spmu_fica_fedtax_bc", "spm_weight"
+# Calculate totals at both person and SPM unit levels so we can compare and
+# calculate poverty gaps.
+person_totals = mdf.weighted_sum(
+    person, ["fica_fedtax_ac", "person"], "marsupwt"
 )
-total_agi = mdf.weighted_sum(spmu, "spmu_agi", "spm_weight")
-population = mdf.weighted_sum(spmu, "spmu_total_people", "spm_weight")
+
+spmu_totals = mdf.weighted_sum(
+    spmu, ["spmu_fica_fedtax_ac", "spmu_total_people"], "spm_weight"
+)
+spmu_totals.index = person_totals.index
+
+totals = pd.concat([person_totals, spmu_totals], axis=1).T
+totals.index = ["person", "spmu"]
 
 # Calculate status quo
 person["poor"] = person.spm_resources < person.spm_povthreshold
@@ -59,13 +64,20 @@ def chg(new, base):
     return (100 * (new - base) / base).round(1)
 
 
-def tax(flat_tax):
-    # Passed as int.
+def tax(flat_tax, total_type="person"):
+    """Calculate all metrics given a flat tax.
+
+    Args:
+        flat_tax: Percentage tax rate (0-100).
+        total_type: Whether to use total population and current tax liability
+            from SPM units or persons. Either "person" or "spmu".
+            Defaults to "person".
+    """
     flat_tax /= 100
     spmu["new_tax"] = spmu.spmu_agi * flat_tax
     new_revenue = mdf.weighted_sum(spmu, "new_tax", "spm_weight")
-    change_revenue = new_revenue - total_current_tax_revenue
-    ubi = change_revenue / population
+    change_revenue = new_revenue - totals.loc[total_type].fica_fedtax_ac
+    ubi = change_revenue / totals.loc[total_type].person
 
     spmu["new_spm_resources"] = (
         spmu.spm_resources_before_tax
@@ -87,7 +99,7 @@ def tax(flat_tax):
         target_persons.new_spm_resources < target_persons.spm_povthreshold
     )
 
-    poverty_rate = mdf.weighted_mean(person, "new_poor", "marsupwt")
+    poverty_rate = mdf.weighted_mean(target_persons, "new_poor", "marsupwt")
     change_poverty_rate = chg(poverty_rate, initial_poverty_rate)
 
     # Calculate poverty gap
