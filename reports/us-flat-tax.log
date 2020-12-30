@@ -17,96 +17,102 @@ Traceback (most recent call last):
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply['content'])
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
-import pandas as pd
-import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-import microdf as mdf
-import statsmodels.api as sm
-import stargazer.stargazer as sg
+# Get data.
 
+from pandas_datareader import wb
 
-summary = pd.read_csv("data/summary.csv")
+pop = wb.download(indicator="SP.POP.TOTL",
+                  country='all', start=2014, 
+                  end=2014).reset_index().drop('year', axis=1)
+pop.rename({"SP.POP.TOTL": "population"}, axis=1, inplace=True)
+# Align countries with Our World In Data and current convention.
+pop.country.replace({"Czech Republic": "Czech Rep.",
+                     "Slovak Republic": "Slovakia",
+                     "Korea, Rep.": "South Korea"},
+                     inplace=True)
+pop["log_pop"] = np.log(pop.population)
 
+oecd_raw = pd.read_csv("data/oecd_growing_unequal_2008_table_4_6.csv")
+# Align countries with Our World In Data and current convention.
+oecd_raw.country.replace({"Korea": "South Korea",
+                          "Slovak Rep.": "Slovakia"},
+                         inplace=True)
+owid = pd.read_csv("data/inequality_pre_post_redistribution.csv")
+owid["gini_diff"] = owid.gini_market - owid.gini_disposable
+oecd = oecd_raw.merge(owid, on="country").merge(pop, on="country")
+oecd["log_pop_scaled"] = oecd.log_pop - oecd.log_pop.min() + 1  # For sizing
+oecd["sqrt_pop"] = np.sqrt(oecd.population)
 
-BLUE = "#1976D2"
-DARK_BLUE = "#1565C0"
-LIGHT_BLUE = "#90CAF9"
-GRAY = "#BDBDBD"
-CONFIG = {"displayModeBar": False}
+LABELS = {"gini_diff":
+          "Gini reduction via taxes and transfers",
+          "household_taxes_concentration":
+          "Household tax concentration index",
+          "public_cash_transfers_income_share":
+          "Cash transfer share of household income",
+          "population":
+          "Population",
+          "household_taxes_income_share":
+          "Tax share of household income"
+         }
 
-def add_ubi_center_watermark(fig, x, y=-0.14):
-    fig.add_layout_image(
-        dict(
-            source="https://raw.githubusercontent.com/UBICenter/blog/master/jb/_static/ubi_center_logo_wide_blue.png",
-            # See https://github.com/plotly/plotly.py/issues/2975.
-            # source="../_static/ubi_center_logo_wide_blue.png",
-            xref="paper", yref="paper",
-            x=x, y=y,
-            sizex=0.12, sizey=0.12,
-            xanchor="right", yanchor="bottom"
-        )
+# Make plot.
+def ineq_scatter(x, xtitle, title, logo_x=1):
+    fig = px.scatter(oecd, x=x, y="gini_diff", hover_name="country",
+                     size="sqrt_pop", #trendline="ols",
+                     labels=LABELS,
+                     size_max=30)
+    # Remove sqrt_pop from hover template.
+    hovertemplate = ("<b>%{hovertext}</b><br><br>" +
+                     LABELS[x] + "=%{x}<br>"
+                     "Gini reduction via taxes and transfers=%{y}")
+    fig.update_traces(hovertemplate=hovertemplate)
+    fig.update_layout(
+        title_text=title,
+        title_font_size=20,
+        font_family="Roboto",
     )
 
-fig = px.line()
-
-fig.add_trace(
-    go.Scatter(
-        x=summary.flat_tax,
-        y=summary.ubi.round(),
-        mode="markers+lines",
-        name="UBI (head tax)",
-        line=dict(color=BLUE, width=2),
+    fig.update_xaxes(
+        tickangle=0,
+        title_text=xtitle,
+        tickfont={"size": 14},
+        title_standoff=25,
+        ticksuffix="",
+        tickprefix="",
     )
-)
 
-fig.add_shape(
-    type="line", line=dict(dash="dot", color="gray"), x0=-1, x1=50, y0=0, y1=0
-)
+    fig.update_yaxes(
+        title_text="Difference between market and disposable income Gini index",
+        ticksuffix="",
+        tickfont={"size": 14},
+        title_standoff=25,
+    )
+    if x == "public_cash_transfers_income_share":
+        fig.update_xaxes(ticksuffix="%")
 
-fig.update_xaxes(
-    tickangle=0,
-    title_text="Flat tax rate",
-    tickfont={"size": 14},
-    title_standoff=25,
-    ticksuffix="%",
-    tickprefix="",
-)
+    fig.update_xaxes(title_font=dict(size=16, color="black"))
+    fig.update_yaxes(title_font=dict(size=16, color="black"))
 
-fig.update_yaxes(
-    title_text="Budget-neutral annual UBI (head tax)",
-    tickprefix="$",
-    tickfont={"size": 14},
-    title_standoff=25,
-)
+    add_ubi_center_watermark(fig, x=logo_x, y=-0.17)
 
-fig.update_xaxes(title_font=dict(size=16, color="black"))
-fig.update_yaxes(title_font=dict(size=16, color="black"))
-fig.update_layout(
-    title_text="Budget-neutral UBI (head tax) by flat tax rate",
-    hoverlabel_align="right",
-    font_family="Roboto",
-    title_font_size=20,
-)
+    fig.update_layout(plot_bgcolor="white")
 
-add_ubi_center_watermark(fig, 0.98)
-
-fig.update_layout(plot_bgcolor="white", hovermode="x")
-fig.update_layout(legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.8))
-fig.update_traces(mode="markers+lines")
-
-fig.show(config=CONFIG)
+    fig.show(config=CONFIG)
+    
+ineq_scatter(x="household_taxes_concentration",
+             xtitle="Household tax concentration index",
+             title="Tax progressivity and inequality reduction in the OECD")
 ------------------
 
 [0;31m---------------------------------------------------------------------------[0m
 [0;31mModuleNotFoundError[0m                       Traceback (most recent call last)
-[0;32m<ipython-input-1-40098f3810c1>[0m in [0;36m<module>[0;34m[0m
-[1;32m      4[0m [0;32mimport[0m [0mplotly[0m[0;34m.[0m[0mgraph_objects[0m [0;32mas[0m [0mgo[0m[0;34m[0m[0;34m[0m[0m
-[1;32m      5[0m [0;32mimport[0m [0mmicrodf[0m [0;32mas[0m [0mmdf[0m[0;34m[0m[0;34m[0m[0m
-[0;32m----> 6[0;31m [0;32mimport[0m [0mstatsmodels[0m[0;34m.[0m[0mapi[0m [0;32mas[0m [0msm[0m[0;34m[0m[0;34m[0m[0m
-[0m[1;32m      7[0m [0;32mimport[0m [0mstargazer[0m[0;34m.[0m[0mstargazer[0m [0;32mas[0m [0msg[0m[0;34m[0m[0;34m[0m[0m
-[1;32m      8[0m [0;34m[0m[0m
+[0;32m<ipython-input-4-3b288e6fe923>[0m in [0;36m<module>[0;34m[0m
+[1;32m      1[0m [0;31m# Get data.[0m[0;34m[0m[0;34m[0m[0;34m[0m[0m
+[1;32m      2[0m [0;34m[0m[0m
+[0;32m----> 3[0;31m [0;32mfrom[0m [0mpandas_datareader[0m [0;32mimport[0m [0mwb[0m[0;34m[0m[0;34m[0m[0m
+[0m[1;32m      4[0m [0;34m[0m[0m
+[1;32m      5[0m pop = wb.download(indicator="SP.POP.TOTL",
 
-[0;31mModuleNotFoundError[0m: No module named 'statsmodels'
-ModuleNotFoundError: No module named 'statsmodels'
+[0;31mModuleNotFoundError[0m: No module named 'pandas_datareader'
+ModuleNotFoundError: No module named 'pandas_datareader'
 
