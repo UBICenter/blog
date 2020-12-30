@@ -27,3 +27,6 @@ repository:
   url: https://github.com/UBICenter/blog
   path_to_book: jb
   branch: master
+
+parse:
+  myst_extended_syntax: true
