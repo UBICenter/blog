@@ -5,6 +5,7 @@ dependencies:
 - pandas
 - numpy
 - statsmodels
+- pandas-datareader
 - pip
 - pip:
   - jupyter-book
