@@ -1,0 +1,112 @@
+Traceback (most recent call last):
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/jupyter_cache/executors/utils.py", line 51, in single_nb_execution
+    executenb(
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/client.py", line 1087, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/util.py", line 74, in wrapped
+    return just_run(coro(*args, **kwargs))
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/util.py", line 53, in just_run
+    return loop.run_until_complete(coro)
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/asyncio/base_events.py", line 616, in run_until_complete
+    return future.result()
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/client.py", line 540, in async_execute
+    await self.async_execute_cell(
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/client.py", line 832, in async_execute_cell
+    self._check_raise_for_error(cell, exec_reply)
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/client.py", line 740, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply['content'])
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+import microdf as mdf
+import statsmodels.api as sm
+import stargazer.stargazer as sg
+
+
+summary = pd.read_csv("data/summary.csv")
+
+
+BLUE = "#1976D2"
+DARK_BLUE = "#1565C0"
+LIGHT_BLUE = "#90CAF9"
+GRAY = "#BDBDBD"
+CONFIG = {"displayModeBar": False}
+
+def add_ubi_center_watermark(fig, x, y=-0.14):
+    fig.add_layout_image(
+        dict(
+            source="https://raw.githubusercontent.com/UBICenter/blog/master/jb/_static/ubi_center_logo_wide_blue.png",
+            # See https://github.com/plotly/plotly.py/issues/2975.
+            # source="../_static/ubi_center_logo_wide_blue.png",
+            xref="paper", yref="paper",
+            x=x, y=y,
+            sizex=0.12, sizey=0.12,
+            xanchor="right", yanchor="bottom"
+        )
+    )
+
+fig = px.line()
+
+fig.add_trace(
+    go.Scatter(
+        x=summary.flat_tax,
+        y=summary.ubi.round(),
+        mode="markers+lines",
+        name="UBI (head tax)",
+        line=dict(color=BLUE, width=2),
+    )
+)
+
+fig.add_shape(
+    type="line", line=dict(dash="dot", color="gray"), x0=-1, x1=50, y0=0, y1=0
+)
+
+fig.update_xaxes(
+    tickangle=0,
+    title_text="Flat tax rate",
+    tickfont={"size": 14},
+    title_standoff=25,
+    ticksuffix="%",
+    tickprefix="",
+)
+
+fig.update_yaxes(
+    title_text="Budget-neutral annual UBI (head tax)",
+    tickprefix="$",
+    tickfont={"size": 14},
+    title_standoff=25,
+)
+
+fig.update_xaxes(title_font=dict(size=16, color="black"))
+fig.update_yaxes(title_font=dict(size=16, color="black"))
+fig.update_layout(
+    title_text="Budget-neutral UBI (head tax) by flat tax rate",
+    hoverlabel_align="right",
+    font_family="Roboto",
+    title_font_size=20,
+)
+
+add_ubi_center_watermark(fig, 0.98)
+
+fig.update_layout(plot_bgcolor="white", hovermode="x")
+fig.update_layout(legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.8))
+fig.update_traces(mode="markers+lines")
+
+fig.show(config=CONFIG)
+------------------
+
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mModuleNotFoundError[0m                       Traceback (most recent call last)
+[0;32m<ipython-input-1-40098f3810c1>[0m in [0;36m<module>[0;34m[0m
+[1;32m      4[0m [0;32mimport[0m [0mplotly[0m[0;34m.[0m[0mgraph_objects[0m [0;32mas[0m [0mgo[0m[0;34m[0m[0;34m[0m[0m
+[1;32m      5[0m [0;32mimport[0m [0mmicrodf[0m [0;32mas[0m [0mmdf[0m[0;34m[0m[0;34m[0m[0m
+[0;32m----> 6[0;31m [0;32mimport[0m [0mstatsmodels[0m[0;34m.[0m[0mapi[0m [0;32mas[0m [0msm[0m[0;34m[0m[0;34m[0m[0m
+[0m[1;32m      7[0m [0;32mimport[0m [0mstargazer[0m[0;34m.[0m[0mstargazer[0m [0;32mas[0m [0msg[0m[0;34m[0m[0;34m[0m[0m
+[1;32m      8[0m [0;34m[0m[0m
+
+[0;31mModuleNotFoundError[0m: No module named 'statsmodels'
+ModuleNotFoundError: No module named 'statsmodels'
+
