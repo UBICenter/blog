@@ -1,0 +1,292 @@
+Traceback (most recent call last):
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/jupyter_cache/executors/utils.py", line 51, in single_nb_execution
+    executenb(
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/client.py", line 1087, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/util.py", line 74, in wrapped
+    return just_run(coro(*args, **kwargs))
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/util.py", line 53, in just_run
+    return loop.run_until_complete(coro)
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/asyncio/base_events.py", line 616, in run_until_complete
+    return future.result()
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/client.py", line 540, in async_execute
+    await self.async_execute_cell(
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/client.py", line 832, in async_execute_cell
+    self._check_raise_for_error(cell, exec_reply)
+  File "/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/nbclient/client.py", line 740, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply['content'])
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+# Import Libraries
+import numpy as np
+import pandas as pd
+import microdf as mdf
+import plotly.express as px
+
+# Import data
+raw = pd.read_csv('https://github.com/UBICenter/Veteran-s_Day/raw/main/VeteranData.gz')
+
+# Create Demographic Columns
+person = raw.copy(deep=True)
+person.columns = person.columns.str.lower()
+person['child'] = person.age < 18
+person['adult'] = person.age >= 18
+person['veteran'] = (person.vetstat == 2) & person.adult
+person['non_veteran'] = (person.vetstat == 1) & person.adult
+
+veterans = person.groupby(['spmfamunit'])[['veteran']].sum()
+veterans.columns = ['total_veterans']
+person = person.merge(veterans, on=['spmfamunit'], right_index=True)
+
+person['child_with_vet'] = (person.child) & (person.total_veterans > 0)
+person['child_with_no_vet'] = (person.child) & (person.total_veterans == 0)
+
+# Show total veterans in millions
+total_veterans = (person.veteran * person.asecwt).sum()
+total_veterans / 1_000_000
+
+# Calculate total AGI
+person['adjginc'].replace({99999999: 0}, inplace=True)
+population = person.asecwt.sum()
+person['weighted_agi'] = person.adjginc * person.asecwt
+total_agi = person.weighted_agi.sum()
+
+# Calculate AGI tax rate per dollar of UBI
+fed_tax_rate_per_dollar_ubi_monthly = (population * 12) / total_agi
+
+# Create table showing tax amounts
+tax_rates = pd.DataFrame(np.arange(0,1001, 50))
+tax_rates.columns = ['monthly_ubi']
+
+def tax(monthly_ubi):
+    return (monthly_ubi * fed_tax_rate_per_dollar_ubi_monthly * 100).round(1)
+
+def tax_row(row):
+    return tax(row.monthly_ubi)
+
+tax_rates['tax_rate'] = tax_rates.apply(tax_row, axis=1)
+tax_rates.columns = ['Monthly UBI', "Flat Tax Rate on AGI"]
+
+def ubi(status, monthly_ubi):
+    """At a given UBI level, calculate the poverty rate, median resources,
+    mean resources, and percent of people better off for:
+    * Veterans
+    * Non-Veterans
+    * Children living with Veteran
+    * Children not living with Veterans
+  
+    Args:
+        status: A person's Veteran status.
+            For this simulation their are 4 categories:
+            * Veteran
+            * Non-Veteran
+            * Child living with a Veteran
+            * Children not living with a Veteran
+        monthly_ubi: the monthly cash transfer given to each person
+  
+    Returns:
+        pandas Series with four elements for the selected group:
+        * Poverty rate
+        * Median resources per person
+        * Mean resources per person
+        * Percent of people better off
+    """    
+
+  
+    # Create a copy of the person DataFrame
+    target_persons = person.copy(deep=True)
+    
+    # Calculate a person's tax increase
+    target_persons['tax_increase'] = (
+        fed_tax_rate_per_dollar_ubi_monthly * monthly_ubi *
+        target_persons.adjginc)
+    
+    # Calculate the total UBI per SPM unit.
+    target_persons['total_ubi'] = (
+        target_persons.spmnpers * 12 * monthly_ubi)
+  
+    # Calculate the total tax increase of an SPM unit
+    spmu = target_persons.groupby(['spmfamunit'])[['tax_increase']].sum()
+    spmu.columns = ['total_tax_increase']
+    target_persons = target_persons.merge(spmu,left_on=['spmfamunit'],
+                                          right_index=True)
+    
+    # Calculate each SPM unit's tax rate person
+    target_persons['new_spm_resources'] = (target_persons.spmtotres
+                                         + target_persons.total_ubi
+                                         - target_persons.total_tax_increase)
+    
+    # Calculate the new resources per person of each SPM unit
+    target_persons['new_resources_per_person'] = (
+        target_persons.new_spm_resources / target_persons.spmnpers)
+      
+    # Slice the data based on Race input
+    if status == 'veteran':
+        target_persons = target_persons[target_persons.veteran]
+    if status == 'non_veteran':
+        target_persons = target_persons[target_persons.non_veteran]
+        
+    
+    if status == 'veteran_child':
+        target_persons = target_persons[target_persons.child_with_vet]
+    if status == 'non_veteran_child':
+        target_persons = target_persons[target_persons.child_with_no_vet]
+        
+  
+    # Calculate the change in poverty rate
+    target_persons['poor'] = (target_persons.new_spm_resources 
+                            < target_persons.spmthresh)
+    total_poor = (target_persons.poor * target_persons.asecwt).sum()
+    target_pop = target_persons.asecwt.sum()
+    
+    # Calculate percent better off
+    target_persons['better_off'] = (target_persons.new_spm_resources > 
+                                target_persons.spmtotres)
+    total_better_off = (
+        target_persons.better_off * target_persons.asecwt).sum()
+    percent = total_better_off / target_pop * 100
+
+    return pd.Series([mdf.weighted_median(
+        target_persons, 'new_resources_per_person', 'asecwt').round(0),
+                      mdf.weighted_mean(target_persons,
+                                        'new_resources_per_person',
+                                        'asecwt').round(0), 
+                      (total_poor / target_pop * 100).round(1), percent])
+
+def ubi_row(row):  
+    """ run the ubi function across the rows of a DataFrame.
+  
+    Arguments
+    row: the row of the DataFrame containing a person's race and the monthly UBI amount
+  
+    Returns
+    The poverty rate for the selected row.
+    The median resources per person for the selected row.
+    The mean resources per person for the selected row.
+    The percent of people better off under the program for the selected row.
+    """  
+    return ubi(row.status, row.monthly_ubi)
+
+# Create a DataFrame that has each the each monthly UBI amount for each race input
+summary = mdf.cartesian_product({'monthly_ubi': np.arange(0,1001,50),
+                       'status': ['veteran', 'non_veteran', 'veteran_child',
+                                  'non_veteran_child']})
+
+# Calculate the poverty rate for each row of the summary DataFrame
+summary[['med_resources_per_person', 'mean_resources_per_person',
+         'poverty_rate', 'better_off']] = summary.apply(ubi_row, axis=1)
+
+summary2 = summary[summary['status'] != 'non_veteran_child'] 
+summary2 = summary2[summary2['status'] != 'veteran_child']
+# Format text
+center = {"med_resources_per_person": "Median resources",
+          "mean_resources_per_person": "Mean resources"}
+status = {"veteran": "Veterans",
+          "non_veteran": "Non-Veteran adults",
+          "veteran_child": "Children in Veteran households",
+          "non_veteran_child": "Children in non-Veteran households"
+       }
+
+summary["status"] =  summary["status"].map(status)
+summary2["status"] =  summary2["status"].map(status)
+
+# Colors from https://material.io/design/color/the-color-system.html
+BLUE = '#1976D2'
+DARK_BLUE = '#0D47A1'
+BARELY_BLUE = '#64B5F6'
+GRAY = '#9E9E9E'
+LIGHT_GRAY = '#E0E0E0'
+
+COLOR_MAP = {
+    "Veterans": BLUE,
+    "Non-Veteran adults": GRAY,
+    "Children in Veteran households": BARELY_BLUE,
+    "Children in non-Veteran households": LIGHT_GRAY
+}
+
+def line_graph(df, x, y, color, title, xaxis_title, yaxis_title):
+    """Style for line graphs.
+    
+    Args:
+        df: DataFrame with data to be plotted.
+        x: The string representing the column in df that holds the new
+            spending in billions.
+        y: The string representing the column in df that holds the poverty
+            rate.
+        color: The string representing the UBI type.
+        xaxis_title: The string represnting the xaxis-title.
+        yaxis_title: The string representing the yaxis-title.
+    
+    Returns:
+        Nothing. Shows the plot.
+    """
+    fig = px.line(df, x=x, y=y, color=color, color_discrete_map=COLOR_MAP)
+    fig.update_layout(
+        title=title,
+        xaxis_title=xaxis_title,
+        yaxis_title=yaxis_title,
+        yaxis_ticksuffix='%',
+        font=dict(family='Roboto'),
+        hovermode='x', 
+        xaxis_tickprefix='$',
+        xaxis_ticksuffix='',
+        plot_bgcolor='white',
+        legend_title_text=''   
+    )
+    fig.update_traces(mode='markers+lines', hovertemplate=None)
+    
+    hide_line = ["Children in Veteran households",
+                 "Children in non-Veteran households"]
+    
+    fig.for_each_trace(lambda trace: trace.update(visible="legendonly") 
+                   if trace.name in hide_line else ())
+
+    fig.show(config={'displayModeBar': False})
+
+line_graph(df=summary, x='monthly_ubi', 
+           y='poverty_rate', color='status',
+           title= 'The impact of a UBI on Veterans and their families',
+           xaxis_title='Monthly UBI',
+           yaxis_title='SPM poverty rate')
+------------------
+
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mMergeError[0m                                Traceback (most recent call last)
+[0;32m<ipython-input-1-3a9d396f6694>[0m in [0;36m<module>[0;34m[0m
+[1;32m     18[0m [0mveterans[0m [0;34m=[0m [0mperson[0m[0;34m.[0m[0mgroupby[0m[0;34m([0m[0;34m[[0m[0;34m'spmfamunit'[0m[0;34m][0m[0;34m)[0m[0;34m[[0m[0;34m[[0m[0;34m'veteran'[0m[0;34m][0m[0;34m][0m[0;34m.[0m[0msum[0m[0;34m([0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[1;32m     19[0m [0mveterans[0m[0;34m.[0m[0mcolumns[0m [0;34m=[0m [0;34m[[0m[0;34m'total_veterans'[0m[0;34m][0m[0;34m[0m[0;34m[0m[0m
+[0;32m---> 20[0;31m [0mperson[0m [0;34m=[0m [0mperson[0m[0;34m.[0m[0mmerge[0m[0;34m([0m[0mveterans[0m[0;34m,[0m [0mon[0m[0;34m=[0m[0;34m[[0m[0;34m'spmfamunit'[0m[0;34m][0m[0;34m,[0m [0mright_index[0m[0;34m=[0m[0;32mTrue[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0m[1;32m     21[0m [0;34m[0m[0m
+[1;32m     22[0m [0mperson[0m[0;34m[[0m[0;34m'child_with_vet'[0m[0;34m][0m [0;34m=[0m [0;34m([0m[0mperson[0m[0;34m.[0m[0mchild[0m[0;34m)[0m [0;34m&[0m [0;34m([0m[0mperson[0m[0;34m.[0m[0mtotal_veterans[0m [0;34m>[0m [0;36m0[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+
+[0;32m/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/pandas/core/frame.py[0m in [0;36mmerge[0;34m(self, right, how, on, left_on, right_on, left_index, right_index, sort, suffixes, copy, indicator, validate)[0m
+[1;32m   8190[0m         [0;32mfrom[0m [0mpandas[0m[0;34m.[0m[0mcore[0m[0;34m.[0m[0mreshape[0m[0;34m.[0m[0mmerge[0m [0;32mimport[0m [0mmerge[0m[0;34m[0m[0;34m[0m[0m
+[1;32m   8191[0m [0;34m[0m[0m
+[0;32m-> 8192[0;31m         return merge(
+[0m[1;32m   8193[0m             [0mself[0m[0;34m,[0m[0;34m[0m[0;34m[0m[0m
+[1;32m   8194[0m             [0mright[0m[0;34m,[0m[0;34m[0m[0;34m[0m[0m
+
+[0;32m/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/pandas/core/reshape/merge.py[0m in [0;36mmerge[0;34m(left, right, how, on, left_on, right_on, left_index, right_index, sort, suffixes, copy, indicator, validate)[0m
+[1;32m     72[0m     [0mvalidate[0m[0;34m=[0m[0;32mNone[0m[0;34m,[0m[0;34m[0m[0;34m[0m[0m
+[1;32m     73[0m ) -> "DataFrame":
+[0;32m---> 74[0;31m     op = _MergeOperation(
+[0m[1;32m     75[0m         [0mleft[0m[0;34m,[0m[0;34m[0m[0;34m[0m[0m
+[1;32m     76[0m         [0mright[0m[0;34m,[0m[0;34m[0m[0;34m[0m[0m
+
+[0;32m/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/pandas/core/reshape/merge.py[0m in [0;36m__init__[0;34m(self, left, right, how, on, left_on, right_on, axis, left_index, right_index, sort, suffixes, copy, indicator, validate)[0m
+[1;32m    648[0m             [0mwarnings[0m[0;34m.[0m[0mwarn[0m[0;34m([0m[0mmsg[0m[0;34m,[0m [0mUserWarning[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[1;32m    649[0m [0;34m[0m[0m
+[0;32m--> 650[0;31m         [0mself[0m[0;34m.[0m[0m_validate_specification[0m[0;34m([0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0m[1;32m    651[0m [0;34m[0m[0m
+[1;32m    652[0m         [0mcross_col[0m [0;34m=[0m [0;32mNone[0m[0;34m[0m[0;34m[0m[0m
+
+[0;32m/usr/share/miniconda/envs/blog/lib/python3.8/site-packages/pandas/core/reshape/merge.py[0m in [0;36m_validate_specification[0;34m(self)[0m
+[1;32m   1301[0m                 )
+[1;32m   1302[0m             [0;32mif[0m [0mself[0m[0;34m.[0m[0mleft_index[0m [0;32mor[0m [0mself[0m[0;34m.[0m[0mright_index[0m[0;34m:[0m[0;34m[0m[0;34m[0m[0m
+[0;32m-> 1303[0;31m                 raise MergeError(
+[0m[1;32m   1304[0m                     [0;34m'Can only pass argument "on" OR "left_index" '[0m[0;34m[0m[0;34m[0m[0m
+[1;32m   1305[0m                     [0;34m'and "right_index", not a combination of both.'[0m[0;34m[0m[0;34m[0m[0m
+
+[0;31mMergeError[0m: Can only pass argument "on" OR "left_index" and "right_index", not a combination of both.
+MergeError: Can only pass argument "on" OR "left_index" and "right_index", not a combination of both.
+
