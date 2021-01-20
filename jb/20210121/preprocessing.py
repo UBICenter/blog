@@ -35,7 +35,13 @@ pop = child_pop + adult_pop
 # Create SPMU dataframe
 spmu = (
     person.groupby(
-        ["spm_id", "spm_weight", "spm_povthreshold", "spm_resources", "spm_numper"]
+        [
+            "spm_id",
+            "spm_weight",
+            "spm_povthreshold",
+            "spm_resources",
+            "spm_numper",
+        ]
     )[["child", "adult", "tax_inc"]]
     .sum()
     .reset_index()
@@ -49,7 +55,9 @@ def pov_gap(df, resources, threshold, weight):
     return (gaps * df[weight]).sum()
 
 
-def ubi(funding_billions=0, child_percent_funding=None, child_percent_ubi=None):
+def ubi(
+    funding_billions=0, child_percent_funding=None, child_percent_ubi=None
+):
     """
     args:
         funding_billions: total annual funding for UBI program in billions USD
@@ -83,11 +91,15 @@ def ubi(funding_billions=0, child_percent_funding=None, child_percent_ubi=None):
     spmu["new_tax"] = tax_rate * spmu.tax_inc
     spmu["spm_ubi"] = (spmu.child * child_ubi) + (spmu.adult * adult_ubi)
 
-    spmu["new_spm_resources"] = spmu.spm_resources + spmu.spm_ubi - spmu.new_tax
+    spmu["new_spm_resources"] = (
+        spmu.spm_resources + spmu.spm_ubi - spmu.new_tax
+    )
     spmu["new_spm_resources_pp"] = spmu.new_spm_resources / spmu.spm_numper
 
     # Calculate poverty gap
-    poverty_gap = pov_gap(spmu, "new_spm_resources", "spm_povthreshold", "spm_weight")
+    poverty_gap = pov_gap(
+        spmu, "new_spm_resources", "spm_povthreshold", "spm_weight"
+    )
 
     # Merge person and spmu dataframes
     spmu_sub = spmu[["spm_id", "new_spm_resources", "new_spm_resources_pp"]]
@@ -106,7 +118,9 @@ def ubi(funding_billions=0, child_percent_funding=None, child_percent_ubi=None):
     target_persons["better_off"] = (
         target_persons.new_spm_resources > target_persons.spm_resources
     )
-    total_better_off = (target_persons.better_off * target_persons.person_weight).sum()
+    total_better_off = (
+        target_persons.better_off * target_persons.person_weight
+    ).sum()
     percent_better_off = total_better_off / pop
 
     return pd.Series(
@@ -157,24 +171,19 @@ summary["monthly_adult_ubi"] = summary["adult_ubi"].apply(
 
 
 # drop rows where funding level is 0, it adds unnecessary noise to graphs
-optimal_poverty = summary.sort_values("poverty_gap").drop_duplicates(
-    "funding_billions", keep="first"
-)
-optimal_poverty = optimal_poverty[optimal_poverty.funding_billions > 0]
+def get_top(col):
+    res = summary.sort_values(col).drop_duplicates(
+        "funding_billions", keep="first"
+    )
+    return res[res.funding_billions > 0]
 
-optimal_inequality = summary.sort_values("gini").drop_duplicates(
-    "funding_billions", keep="first"
-)
-optimal_inequality = optimal_inequality[optimal_inequality.funding_billions > 0]
 
-optimal_winners = summary.sort_values("percent_better_off").drop_duplicates(
-    "funding_billions", keep="last"
-)
-optimal_winners = optimal_winners[optimal_winners.funding_billions > 0]
+optimal_poverty = get_top("poverty_gap")
+optimal_inequality = get_top("gini")
+optimal_winners = get_top("percent_better_off")
 
 # write df to csv
 summary.to_csv("children_share_funding_summary.csv.gz", compression="gzip")
-
 
 summary2 = mdf.cartesian_product(
     {
@@ -186,7 +195,8 @@ summary2 = mdf.cartesian_product(
 
 def big_percent_row(row):
     return ubi(
-        funding_billions=row.funding_billions, child_percent_ubi=row.child_percent_ubi
+        funding_billions=row.funding_billions,
+        child_percent_ubi=row.child_percent_ubi,
     )
 
 
@@ -200,7 +210,6 @@ summary2[
         "child_ubi",
     ]
 ] = summary2.apply(big_percent_row, axis=1)
-summary2
 
 # calculate monthly payments
 summary2["monthly_child_ubi"] = summary2["child_ubi"].apply(
@@ -211,5 +220,3 @@ summary2["monthly_adult_ubi"] = summary2["adult_ubi"].apply(
 )
 
 summary2.to_csv("children_share_ubi_summary.csv.gz", compression="gzip")
-
-# summary2.to_csv("child_share_ubi_summary.csv.gz", compression="gzip")
