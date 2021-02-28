@@ -58,7 +58,7 @@ simulated = ubi_sim(s, 2000, 100)
 
 # create empty list to store candidates for D-statistics
 lins = np.array([])
-for i in range(4, 6):  # range(2, 9):
+for i in range(2, 9):
     increment = 10 ** (i - 2)
     tmp = np.unique(
         np.round(np.arange(10 ** i, 10 ** (i + 1), increment * 5), -2)
@@ -153,6 +153,7 @@ ubi_summary["white_share_above_50k_pct_of__black"] = (
 
 ubi_summary = ubi_summary.merge(cdfs_max, on="ubi_mo").reset_index()
 
+
 def total_wealth_by_decile(data, measure):
     quant_df = pd.DataFrame()
     for race2 in data.race2.unique():
@@ -167,7 +168,9 @@ def total_wealth_by_decile(data, measure):
                 quantile_subset = race_df[
                     race_df.networth.between(value, deciles[index + 1])
                 ]
-                quantile_nws.append(mdf.weighted_sum(quantile_subset, measure, "wgt"))
+                quantile_nws.append(
+                    mdf.weighted_sum(quantile_subset, measure, "wgt")
+                )
         quantile_nw_pct = (quantile_nws / race_total_nw) * 100
         race_quant_df = pd.DataFrame(
             {race2: quantile_nw_pct}, index=np.arange(1, 11, 1)
