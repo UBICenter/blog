@@ -153,5 +153,36 @@ ubi_summary["white_share_above_50k_pct_of__black"] = (
 
 ubi_summary = ubi_summary.merge(cdfs_max, on="ubi_mo").reset_index()
 
+def total_wealth_by_decile(data, measure):
+    quant_df = pd.DataFrame()
+    for race2 in data.race2.unique():
+        race_df = data[data.race2 == race2].copy(deep=True)
+        decile_bounds = np.arange(0, 1.1, 0.1)
+        deciles = mdf.weighted_quantile(race_df, measure, "wgt", decile_bounds)
+
+        race_total_nw = mdf.weighted_sum(race_df, measure, "wgt")
+        quantile_nws = []
+        for index, value in enumerate(deciles):
+            if index + 1 < len(deciles):
+                quantile_subset = race_df[
+                    race_df.networth.between(value, deciles[index + 1])
+                ]
+                quantile_nws.append(mdf.weighted_sum(quantile_subset, measure, "wgt"))
+        quantile_nw_pct = (quantile_nws / race_total_nw) * 100
+        race_quant_df = pd.DataFrame(
+            {race2: quantile_nw_pct}, index=np.arange(1, 11, 1)
+        )
+        quant_df = pd.concat([quant_df, race_quant_df], axis=1)
+    return quant_df
+
+
+nw_quant = (
+    total_wealth_by_decile(s, "networth")
+    .reset_index()
+    .rename(columns={"index": "percentile"})
+    .melt(id_vars=["percentile"])
+)
+
 cdfs.to_csv("cdfs.csv", index=False)
 ubi_summary.to_csv("ubi_summary.csv", index=False)
+nw_quant.to_csv("deciles.csv", index=False)
