@@ -9,6 +9,8 @@ dependencies:
 - pip
 - pip:
   - jupyter-book
-  - "git+https://github.com/PSLmodels/microdf.git"
+  - "git+https://github.com/PSLmodels/microdf"
+  - "git+https://github.com/PSLmodels/scf"
+  - "git+https://github.com/UBICenter/ubicenter.py"
   - sphinxcontrib-bibtex==1.0.0
   - stargazer
