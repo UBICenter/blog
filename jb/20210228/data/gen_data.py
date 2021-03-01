@@ -122,10 +122,10 @@ ubi_summary = (
                 "white_median_networth_pa": mdf.weighted_median(
                     x[x.race2 == "White"], "networth_pa_new", "wgt"
                 ),
-                "black_mean_networth_pa": mdf.weighted_median(
+                "black_mean_networth_pa": mdf.weighted_mean(
                     x[x.race2 == "Black"], "networth_pa_new", "wgt"
                 ),
-                "white_mean_networth_pa": mdf.weighted_median(
+                "white_mean_networth_pa": mdf.weighted_mean(
                     x[x.race2 == "White"], "networth_pa_new", "wgt"
                 ),
                 "black_share_above_50k": x[
@@ -141,17 +141,28 @@ ubi_summary = (
     )
     .reset_index()
 )
+
 ubi_summary["white_mean_nw_as_pct_of_mean_black"] = (
     ubi_summary.white_mean_networth_pa / ubi_summary.black_mean_networth_pa
 )
 ubi_summary["white_median_nw_as_pct_of_median_black"] = (
     ubi_summary.white_median_networth_pa / ubi_summary.black_median_networth_pa
 )
-ubi_summary["white_share_above_50k_pct_of__black"] = (
+ubi_summary["white_share_above_50k_pct_of_black"] = (
     ubi_summary.white_share_above_50k / ubi_summary.black_share_above_50k
 )
 
 ubi_summary = ubi_summary.merge(cdfs_max, on="ubi_mo").reset_index()
+
+# Calculate percentage change in each disparity measure for final chart.
+ubi_summary.sort_values("ubi_mo", inplace=True)
+for i in [
+    "white_mean_nw_as_pct_of_mean_black",
+    "white_median_nw_as_pct_of_median_black",
+    "white_share_above_50k_pct_of_black",
+    "d_stat_cand",
+]:
+    ubi_summary[i + "_pc"] = ubi_summary[i] / ubi_summary[i][0] - 1
 
 
 def total_wealth_by_decile(data, measure):
