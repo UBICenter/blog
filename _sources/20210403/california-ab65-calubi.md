@@ -85,14 +85,14 @@ Our [child allowance simulation](https://child-allowance.ubicenter.org/simulatio
 
 A number of revenue options could fund such a program:
 
-*   Adding to the income tax, as described in the above simulation.
-*   Applying California's expected [\$15 billion surplus](https://apnews.com/article/gavin-newsom-california-coronavirus-pandemic-8d01e88ceeb4b0bc6cb1fb0d6a8d72b7) in 2021. This wouldn't fund a permanent policy, but could fund a \$100 monthly child allowance, plus a \$100 monthly young child supplement, for a trial year.
-*   Taxing commercial property at market value would raise between [\$6.5 and \$11.5 billion](https://lao.ca.gov/BallotAnalysis/Proposition?number=15&year=2020#:~:text=The%20measure%20requires%20commercial%20and,over%20time%20starting%20in%202022.) per year. A ballot measure to do this [narrowly lost](https://www.latimes.com/california/story/2020-11-10/proposition-15-commercial-property-tax-defeated) in 2020.
-*   Ending the mortgage interest deduction on second homes would raise \$250 million per year. [AB946](https://a25.asmdc.org/press-releases/20210219-assemblymember-alex-lee-introduces-repeal-regressive-mortgage-interest) proposes to do this, though the revenue is used for a first-time home buyer program.
-*   Conforming parts of the state income tax code with federal tax code changes enacted as part of the 2017 Tax Cuts and Jobs Act; this would raise [\$1.7 billion](https://lao.ca.gov/Publications/Report/3959) per year.
-*   Replacing other benefit programs, such as CalWORKS (the state TANF program), Special Supplemental Nutrition Program for Women, Infants, and Children (WIC), the child component of CalEITC, and the Young Child Tax Credit.
-*   Instituting an estate tax, as was [proposed in 2017](https://sd11.senate.ca.gov/news/20190326-senator-wiener-introduces-california-estate-tax-proposal-fund-programs-reducing-wealth) and which was estimated to raise between \$500 million and \$1 billion per year.
-*   Repealing other state tax deductions that primarily benefit high income households, such as the property tax deduction.
+* Adding to the income tax, as described in the above simulation.
+* Applying California's expected [\$15 billion surplus](https://apnews.com/article/gavin-newsom-california-coronavirus-pandemic-8d01e88ceeb4b0bc6cb1fb0d6a8d72b7) in 2021. This wouldn't fund a permanent policy, but could fund a \$100 monthly child allowance, plus a \$100 monthly young child supplement, for a trial year.
+* Taxing commercial property at market value would raise between [\$6.5 and \$11.5 billion](https://lao.ca.gov/BallotAnalysis/Proposition?number=15&year=2020#:~:text=The%20measure%20requires%20commercial%20and,over%20time%20starting%20in%202022.) per year. A ballot measure to do this [narrowly lost](https://www.latimes.com/california/story/2020-11-10/proposition-15-commercial-property-tax-defeated) in 2020.
+* Ending the mortgage interest deduction on second homes would raise \$250 million per year. [AB946](https://a25.asmdc.org/press-releases/20210219-assemblymember-alex-lee-introduces-repeal-regressive-mortgage-interest) proposes to do this, though the revenue is used for a first-time home buyer program.
+* Conforming parts of the state income tax code with federal tax code changes enacted as part of the 2017 Tax Cuts and Jobs Act; this would raise [\$1.7 billion](https://lao.ca.gov/Publications/Report/3959) per year.
+* Replacing other benefit programs, such as CalWORKS (the state TANF program), Special Supplemental Nutrition Program for Women, Infants, and Children (WIC), the child component of CalEITC, and the Young Child Tax Credit.
+* Instituting an estate tax, as was [proposed in 2017](https://sd11.senate.ca.gov/news/20190326-senator-wiener-introduces-california-estate-tax-proposal-fund-programs-reducing-wealth) and which was estimated to raise between \$500 million and \$1 billion per year.
+* Repealing other state tax deductions that primarily benefit high income households, such as the property tax deduction.
 
 
 ## Or a California young child allowance
